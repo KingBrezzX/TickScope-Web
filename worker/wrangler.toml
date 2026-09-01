@@ -1,0 +1,6 @@
+name = "tickscope-api-proxy"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+# The token is NOT stored here. Create a secret named TICKSCOPE_TOKEN.
