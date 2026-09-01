@@ -1,1 +1,88 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TickScope • ZyrexSMP</title><link rel="stylesheet" href="assets/style.css"></head><body><main class="shell"><header><div><div class="brand">Tick<span>Scope</span></div><div class="sub">ZyrexSMP Performance Console</div></div><div class="actions"><span id="conn" class="pill off">OFFLINE</span><button id="refresh">Refresh</button><button id="settings">Settings</button></div></header><section class="hero"><div><div class="eyebrow">LIVE SERVER TELEMETRY</div><h1>Performance at a glance.</h1><p>Premium dashboard powered by <code>/api/v1/all</code>.</p></div><div class="clock" id="clock">--:--:--</div></section><section class="stats"><article><small>TPS</small><strong id="tps">—</strong><em id="tpsState">—</em></article><article><small>MSPT</small><strong id="mspt">—</strong><em id="msptState">—</em></article><article><small>PLAYERS</small><strong id="players">—</strong><em>ONLINE</em></article><article><small>ENTITIES</small><strong id="entities">—</strong><em>LOADED</em></article><article><small>TILE ENTITIES</small><strong id="tiles">—</strong><em>LOADED</em></article><article><small>CHUNKS</small><strong id="chunks">—</strong><em>LOADED</em></article></section><section class="grid"><article class="panel chart"><div class="panelhead"><h2>TPS / MSPT</h2><span id="updated">Waiting…</span></div><canvas id="graph"></canvas></article><article class="panel"><div class="panelhead"><h2>Server</h2><span id="serverOnline" class="dot"></span></div><div class="kv" id="server"></div></article></section><nav class="tabs" id="tabs"></nav><section class="panel detail"><div class="panelhead"><h2 id="tabTitle">Spikes</h2><button id="rawBtn">Raw JSON</button></div><div id="content" class="content">Connect to load telemetry.</div></section><footer>TickScope • API v1 • Browser-side API key storage</footer></main><div id="modal" class="modal hidden"><div class="modalbox"><h2>Connection</h2><label>API Endpoint<input id="endpoint" placeholder="https://api.example.com"></label><label>API Key<input id="key" type="password" placeholder="TS_..."></label><div class="modalactions"><button id="cancel">Cancel</button><button id="save">Save & Connect</button></div><p class="hint">The key stays in this browser and is not committed to GitHub.</p></div></div><script src="assets/app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b12">
+<title>TickScope — ZyrexSMP Performance Console</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span>Tick</span><b>Scope</b><small>ZyrexSMP Performance Console</small></div>
+  <div class="top-actions">
+    <span id="status" class="status offline">OFFLINE</span>
+    <button id="refreshBtn" class="btn">Refresh</button>
+    <button id="settingsBtn" class="btn primary">Settings</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">LIVE SERVER TELEMETRY</p>
+      <h1>Performance at a glance.</h1>
+      <p class="sub">Real-time Minecraft performance from TickScope <code>/api/v1/all</code>.</p>
+    </div>
+    <div id="clock" class="clock">--:--:--</div>
+  </section>
+
+  <div id="error" class="error hidden"></div>
+
+  <section class="grid metrics">
+    <article class="card"><label>TPS</label><strong id="tps">—</strong><small id="tpsHint">WAITING</small></article>
+    <article class="card"><label>MSPT</label><strong id="mspt">—</strong><small id="msptHint">WAITING</small></article>
+    <article class="card"><label>PLAYERS</label><strong id="players">—</strong><small>ONLINE</small></article>
+    <article class="card"><label>ENTITIES</label><strong id="entities">—</strong><small>LOADED</small></article>
+    <article class="card"><label>TILE ENTITIES</label><strong id="tiles">—</strong><small>LOADED</small></article>
+    <article class="card"><label>CHUNKS</label><strong id="chunks">—</strong><small>LOADED</small></article>
+  </section>
+
+  <section class="card chart-card">
+    <div class="section-head"><h2>TPS / MSPT</h2><span id="chartState">Waiting…</span></div>
+    <canvas id="chart"></canvas>
+  </section>
+
+  <section class="card server-card">
+    <div class="section-head"><h2>Server</h2><span id="lastUpdate">No data</span></div>
+    <div class="server-grid">
+      <div><span>NAME</span><b id="serverName">—</b></div>
+      <div><span>MINECRAFT</span><b id="minecraft">—</b></div>
+      <div><span>UPTIME</span><b id="uptime">—</b></div>
+      <div><span>STATUS</span><b id="online">—</b></div>
+    </div>
+  </section>
+
+  <section class="card details">
+    <div class="tabs" id="tabs">
+      <button data-tab="spikes" class="active">Spikes</button>
+      <button data-tab="hotspots">Hotspots</button>
+      <button data-tab="redstone">Redstone</button>
+      <button data-tab="entitiesTab">Entities</button>
+      <button data-tab="tilesTab">Tile Entities</button>
+      <button data-tab="recommendations">Recommendations</button>
+      <button data-tab="history">History</button>
+      <button id="rawBtn">Raw JSON</button>
+    </div>
+    <pre id="detailOutput">Connect to load data.</pre>
+  </section>
+</main>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head"><h2>TickScope Settings</h2><button id="closeModal" class="icon">×</button></div>
+    <label>API Endpoint</label>
+    <input id="endpoint" placeholder="https://your-api.example.com">
+    <p class="hint">For GitHub Pages, use an HTTPS endpoint. Your current HTTP port will be blocked by the browser as mixed content.</p>
+    <label>API Key</label>
+    <input id="apiKey" type="password" autocomplete="off" placeholder="TS_...">
+    <div class="row">
+      <button id="testBtn" class="btn">Test Connection</button>
+      <button id="saveBtn" class="btn primary">Save & Connect</button>
+    </div>
+    <div id="testResult" class="test-result"></div>
+  </div>
+</div>
+<script src="assets/app.js"></script>
+</body>
+</html>

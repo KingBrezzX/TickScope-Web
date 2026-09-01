@@ -1,11 +1,40 @@
-# TickScope Web GitHub Ready
+# TickScope-Web
 
-Uses `GET /api/v1/all?token=...` and provides TPS/MSPT, server stats, monitoring tabs, and a premium responsive UI.
+Premium GitHub Pages dashboard for TickScope `/api/v1/all`.
 
-Default API: `http://business3.astrixhost.web.id:19132`
+## Why the old GitHub Pages build showed "Failed to fetch"
 
-Upload the repository contents to GitHub and enable Settings → Pages → GitHub Actions.
+Your GitHub Pages site is HTTPS. The TickScope API you entered is HTTP:
 
-The API key is entered in the dashboard and stored only in browser localStorage. It is not committed to the repository.
+`http://business3.astrixhost.web.id:19132`
 
-For GitHub Pages production, expose the API through HTTPS to avoid browser mixed-content blocking.
+Modern browsers block an HTTPS page from calling an HTTP API (mixed content). A correct API key cannot fix that browser security rule.
+
+## Recommended production setup
+
+Use the included `worker/` HTTPS proxy.
+
+1. Deploy `worker/worker.js` to Cloudflare Workers.
+2. Create a Worker secret named `TICKSCOPE_TOKEN` containing your TickScope token.
+3. The Worker endpoint becomes HTTPS.
+4. Open TickScope Settings.
+5. API Endpoint = your Worker URL, for example `https://tickscope-api-proxy.<your-subdomain>.workers.dev`
+6. API Key can be left empty when using this proxy.
+7. Save & Connect.
+
+The Worker adds the token server-side, so the token does not need to be committed to GitHub.
+
+## GitHub Pages
+
+Repository name: `TickScope-Web`
+
+Upload the repository contents (not the ZIP file), then:
+Settings → Pages → Source → GitHub Actions.
+
+## Local testing
+
+If the dashboard is opened from `http://localhost` and the API permits CORS, the direct HTTP endpoint can be used in Settings. GitHub Pages still requires HTTPS.
+
+## Security
+
+The token previously shared for testing should be regenerated after testing. Never commit it into `app.js`, HTML, GitHub Actions, or `wrangler.toml`.
