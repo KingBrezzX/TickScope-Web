@@ -1,77 +1,130 @@
-// TickScope HTTPS Worker
-// This is the secure bridge between GitHub Pages (HTTPS) and the TickScope
-// HTTP API on port 19132. Store your token as the Cloudflare Worker secret:
-// TICKSCOPE_TOKEN
-//
-// GitHub Pages calls:
-//   https://YOUR-WORKER.workers.dev/api/v1/all
-//
-// The Worker calls:
-//   http://business3.astrixhost.web.id:19132/api/v1/all?token=SECRET
-
 const ORIGIN = "http://business3.astrixhost.web.id:19132";
+const API_PATH = "/api/v1/all";
 
-function cors(extra = {}) {
+function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type,Authorization",
-    "Cache-Control": "no-store",
-    ...extra
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Cache-Control": "no-store"
   };
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      ...corsHeaders()
+    }
+  });
 }
 
 export default {
   async fetch(request, env) {
-    if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: cors() });
-    }
-
     const url = new URL(request.url);
 
-    if (!url.pathname.startsWith("/api/v1/")) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Not found" }),
-        { status: 404, headers: { "Content-Type": "application/json", ...cors() } }
+    // CORS preflight
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders()
+      });
+    }
+
+    // Only allow GET
+    if (request.method !== "GET") {
+      return json(
+        {
+          success: false,
+          error: "Method not allowed"
+        },
+        405
       );
     }
 
+    // Health check
+    if (url.pathname === "/" || url.pathname === "/health") {
+      return json({
+        success: true,
+        service: "TickScope HTTPS Worker",
+        status: "online",
+        upstream: ORIGIN,
+        endpoint: API_PATH
+      });
+    }
+
+    // Only proxy /api/v1/all
+    if (url.pathname !== API_PATH) {
+      return json(
+        {
+          success: false,
+          error: "Not found"
+        },
+        404
+      );
+    }
+
+    // Token MUST exist as Cloudflare Worker Secret
     if (!env.TICKSCOPE_TOKEN) {
-      return new Response(
-        JSON.stringify({ success: false, error: "TICKSCOPE_TOKEN secret is not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...cors() } }
+      return json(
+        {
+          success: false,
+          error: "TICKSCOPE_TOKEN is not configured"
+        },
+        500
       );
     }
 
-    const upstream = new URL(ORIGIN + url.pathname);
-    for (const [key, value] of url.searchParams) {
-      if (key !== "token" && key !== "_") upstream.searchParams.set(key, value);
-    }
-    upstream.searchParams.set("token", env.TICKSCOPE_TOKEN);
+    // Build upstream URL
+    const upstreamUrl = new URL(
+      ORIGIN + API_PATH
+    );
+
+    // Inject token server-side.
+    // The token never reaches the browser.
+    upstreamUrl.searchParams.set(
+      "token",
+      env.TICKSCOPE_TOKEN
+    );
 
     try {
-      const response = await fetch(upstream.toString(), {
-        method: "GET",
-        headers: { Accept: request.headers.get("Accept") || "application/json" }
-      });
+      const upstreamResponse = await fetch(
+        upstreamUrl.toString(),
+        {
+          method: "GET",
+          headers: {
+            "Accept": "application/json"
+          },
+          redirect: "follow"
+        }
+      );
 
-      const body = await response.text();
+      const body = await upstreamResponse.text();
 
       return new Response(body, {
-        status: response.status,
+        status: upstreamResponse.status,
         headers: {
-          "Content-Type": response.headers.get("Content-Type") || "application/json",
-          ...cors()
+          "Content-Type":
+            upstreamResponse.headers.get(
+              "Content-Type"
+            ) ||
+            "application/json; charset=utf-8",
+
+          ...corsHeaders()
         }
       });
+
     } catch (error) {
-      return new Response(
-        JSON.stringify({
+      return json(
+        {
           success: false,
-          error: "Upstream fetch failed",
-          message: String(error)
-        }),
-        { status: 502, headers: { "Content-Type": "application/json", ...cors() } }
+          error: "Upstream API unavailable",
+          message: error instanceof Error
+            ? error.message
+            : String(error)
+        },
+        502
       );
     }
   }
