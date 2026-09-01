@@ -71,11 +71,10 @@
 <div id="modal" class="modal hidden">
   <div class="modal-box">
     <div class="modal-head"><h2>TickScope Settings</h2><button id="closeModal" class="icon">×</button></div>
-    <label>API Endpoint</label>
-    <input id="endpoint" placeholder="https://your-api.example.com">
-    <p class="hint">For GitHub Pages, use an HTTPS endpoint. Your current HTTP port will be blocked by the browser as mixed content.</p>
-    <label>API Key</label>
-    <input id="apiKey" type="password" autocomplete="off" placeholder="TS_...">
+    <label>HTTPS Worker Endpoint</label>
+    <input id="endpoint" placeholder="https://tickscope-api.example.workers.dev">
+    <p class="hint">TickScope uses the included HTTPS Worker as the secure bridge to your HTTP server API. The TickScope token stays inside the Worker and is never stored in this GitHub Pages site.</p>
+    <div class="secure-badge">🔒 HTTPS WORKER MODE</div>
     <div class="row">
       <button id="testBtn" class="btn">Test Connection</button>
       <button id="saveBtn" class="btn primary">Save & Connect</button>
@@ -83,6 +82,7 @@
     <div id="testResult" class="test-result"></div>
   </div>
 </div>
+<script src="assets/config.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

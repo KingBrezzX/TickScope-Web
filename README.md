@@ -1,40 +1,44 @@
-# TickScope-Web
+# TickScope-Web — Final HTTPS Worker Build
 
-Premium GitHub Pages dashboard for TickScope `/api/v1/all`.
+Premium GitHub Pages dashboard for TickScope.
 
-## Why the old GitHub Pages build showed "Failed to fetch"
+## Why this version fixes Mixed Content
 
-Your GitHub Pages site is HTTPS. The TickScope API you entered is HTTP:
+GitHub Pages is HTTPS. The Minecraft/TickScope API is HTTP on port 19132.
+A browser cannot fetch that HTTP API directly from an HTTPS page.
 
-`http://business3.astrixhost.web.id:19132`
+This build therefore uses the included Cloudflare Worker:
 
-Modern browsers block an HTTPS page from calling an HTTP API (mixed content). A correct API key cannot fix that browser security rule.
+GitHub Pages (HTTPS)
+→ TickScope HTTPS Worker
+→ TickScope HTTP API
+→ ZyrexSMP
 
-## Recommended production setup
+The TickScope token is stored only as the Cloudflare Worker secret `TICKSCOPE_TOKEN`.
+It is NOT stored in this repository and is NOT sent from the browser.
 
-Use the included `worker/` HTTPS proxy.
+## One-time setup
 
-1. Deploy `worker/worker.js` to Cloudflare Workers.
-2. Create a Worker secret named `TICKSCOPE_TOKEN` containing your TickScope token.
-3. The Worker endpoint becomes HTTPS.
-4. Open TickScope Settings.
-5. API Endpoint = your Worker URL, for example `https://tickscope-api-proxy.<your-subdomain>.workers.dev`
-6. API Key can be left empty when using this proxy.
-7. Save & Connect.
+1. Deploy `worker/worker.js` as a Cloudflare Worker.
+2. Add Worker Secret:
+   `TICKSCOPE_TOKEN` = your current TickScope API token.
+3. Deploy the Worker.
+4. Copy its HTTPS URL, for example:
+   `https://tickscope-api.YOUR-SUBDOMAIN.workers.dev`
+5. Edit `assets/config.js` and replace `YOUR-SUBDOMAIN` with the real Worker URL.
+6. Commit/push the repo to GitHub.
+7. GitHub Pages → Settings → Pages → Source: GitHub Actions.
+8. Open the Pages site. Settings will already be filled with the HTTPS Worker URL.
 
-The Worker adds the token server-side, so the token does not need to be committed to GitHub.
+## Important
 
-## GitHub Pages
+Do NOT put the TickScope token in `assets/config.js`, `app.js`, HTML, or GitHub Actions source.
+If the token was ever exposed publicly, regenerate it in TickScope before production use.
 
-Repository name: `TickScope-Web`
+## API
 
-Upload the repository contents (not the ZIP file), then:
-Settings → Pages → Source → GitHub Actions.
+The Worker proxies `/api/v1/*`, including:
+- `/api/v1/all`
+- future TickScope API endpoints
 
-## Local testing
-
-If the dashboard is opened from `http://localhost` and the API permits CORS, the direct HTTP endpoint can be used in Settings. GitHub Pages still requires HTTPS.
-
-## Security
-
-The token previously shared for testing should be regenerated after testing. Never commit it into `app.js`, HTML, GitHub Actions, or `wrangler.toml`.
+The web dashboard uses `/api/v1/all` by default.
