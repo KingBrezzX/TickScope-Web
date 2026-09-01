@@ -1,88 +1,94 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080b12">
-<title>TickScope — ZyrexSMP Performance Console</title>
-<link rel="stylesheet" href="assets/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TickScope — ZyrexSMP Performance Console</title>
+  <meta name="description" content="TickScope Minecraft Java server performance dashboard">
+  <link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="brand"><span>Tick</span><b>Scope</b><small>ZyrexSMP Performance Console</small></div>
-  <div class="top-actions">
-    <span id="status" class="status offline">OFFLINE</span>
-    <button id="refreshBtn" class="btn">Refresh</button>
-    <button id="settingsBtn" class="btn primary">Settings</button>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <div class="brand">TickScope</div>
+        <div class="subtitle">ZyrexSMP Performance Console</div>
+      </div>
+      <div class="actions">
+        <span id="statusBadge" class="badge waiting">WAITING</span>
+        <button id="refreshBtn" class="btn">Refresh</button>
+        <button id="settingsBtn" class="btn">Settings</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">LIVE SERVER TELEMETRY</div>
+          <h1>Performance at a glance.</h1>
+          <p>Real-time Minecraft performance from TickScope <code>/api/v1/all</code>.</p>
+        </div>
+        <div id="lastUpdated" class="updated">—</div>
+      </section>
+
+      <section class="grid metrics">
+        <article class="card metric"><span>TPS</span><strong id="tps">—</strong><small id="tpsState">WAITING</small></article>
+        <article class="card metric"><span>MSPT</span><strong id="mspt">—</strong><small id="msptState">WAITING</small></article>
+        <article class="card metric"><span>PLAYERS</span><strong id="players">—</strong><small>ONLINE</small></article>
+        <article class="card metric"><span>ENTITIES</span><strong id="entities">—</strong><small>LOADED</small></article>
+        <article class="card metric"><span>TILE ENTITIES</span><strong id="tileEntities">—</strong><small>LOADED</small></article>
+        <article class="card metric"><span>LOADED CHUNKS</span><strong id="loadedChunks">—</strong><small>LOADED</small></article>
+      </section>
+
+      <section class="card chart-card">
+        <div class="section-head"><div><h2>Performance</h2><p>Recent TPS / MSPT samples</p></div></div>
+        <canvas id="performanceChart" height="180"></canvas>
+      </section>
+
+      <section class="card server-card">
+        <div class="section-head"><div><h2>Server</h2><p>Current server state</p></div></div>
+        <div class="server-grid">
+          <div><span>NAME</span><strong id="serverName">—</strong></div>
+          <div><span>MINECRAFT</span><strong id="minecraft">—</strong></div>
+          <div><span>UPTIME</span><strong id="uptime">—</strong></div>
+          <div><span>STATUS</span><strong id="serverStatus">—</strong></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <nav class="tabs" aria-label="Telemetry">
+          <button class="tab active" data-tab="spikes">Spikes</button>
+          <button class="tab" data-tab="hotspots">Hotspots</button>
+          <button class="tab" data-tab="redstone">Redstone</button>
+          <button class="tab" data-tab="entitiesTab">Entities</button>
+          <button class="tab" data-tab="tileTab">Tile Entities</button>
+          <button class="tab" data-tab="recommendations">Recommendations</button>
+          <button class="tab" data-tab="history">History</button>
+          <button class="tab" data-tab="raw">Raw JSON</button>
+        </nav>
+        <div id="tabContent" class="tab-content"></div>
+      </section>
+    </main>
+
+    <footer>TickScope • Java Edition • HTTPS Worker protected API</footer>
   </div>
-</header>
 
-<main class="wrap">
-  <section class="hero">
-    <div>
-      <p class="eyebrow">LIVE SERVER TELEMETRY</p>
-      <h1>Performance at a glance.</h1>
-      <p class="sub">Real-time Minecraft performance from TickScope <code>/api/v1/all</code>.</p>
+  <dialog id="settingsDialog">
+    <div class="modal">
+      <div class="section-head"><div><h2>Settings</h2><p>Production endpoint is fixed to the secure Worker.</p></div><button id="closeSettings" class="icon">×</button></div>
+      <label>HTTPS Worker Endpoint
+        <input id="apiEndpoint" readonly>
+      </label>
+      <div class="notice">The API token stays on Cloudflare Worker as the secret <code>TICKSCOPE_TOKEN</code>. It is never committed to GitHub Pages.</div>
+      <div class="modal-actions">
+        <button id="testBtn" class="btn primary">Test Connection</button>
+        <button id="saveBtn" class="btn">Save &amp; Connect</button>
+      </div>
+      <div id="settingsResult" class="result">Ready.</div>
     </div>
-    <div id="clock" class="clock">--:--:--</div>
-  </section>
+  </dialog>
 
-  <div id="error" class="error hidden"></div>
-
-  <section class="grid metrics">
-    <article class="card"><label>TPS</label><strong id="tps">—</strong><small id="tpsHint">WAITING</small></article>
-    <article class="card"><label>MSPT</label><strong id="mspt">—</strong><small id="msptHint">WAITING</small></article>
-    <article class="card"><label>PLAYERS</label><strong id="players">—</strong><small>ONLINE</small></article>
-    <article class="card"><label>ENTITIES</label><strong id="entities">—</strong><small>LOADED</small></article>
-    <article class="card"><label>TILE ENTITIES</label><strong id="tiles">—</strong><small>LOADED</small></article>
-    <article class="card"><label>CHUNKS</label><strong id="chunks">—</strong><small>LOADED</small></article>
-  </section>
-
-  <section class="card chart-card">
-    <div class="section-head"><h2>TPS / MSPT</h2><span id="chartState">Waiting…</span></div>
-    <canvas id="chart"></canvas>
-  </section>
-
-  <section class="card server-card">
-    <div class="section-head"><h2>Server</h2><span id="lastUpdate">No data</span></div>
-    <div class="server-grid">
-      <div><span>NAME</span><b id="serverName">—</b></div>
-      <div><span>MINECRAFT</span><b id="minecraft">—</b></div>
-      <div><span>UPTIME</span><b id="uptime">—</b></div>
-      <div><span>STATUS</span><b id="online">—</b></div>
-    </div>
-  </section>
-
-  <section class="card details">
-    <div class="tabs" id="tabs">
-      <button data-tab="spikes" class="active">Spikes</button>
-      <button data-tab="hotspots">Hotspots</button>
-      <button data-tab="redstone">Redstone</button>
-      <button data-tab="entitiesTab">Entities</button>
-      <button data-tab="tilesTab">Tile Entities</button>
-      <button data-tab="recommendations">Recommendations</button>
-      <button data-tab="history">History</button>
-      <button id="rawBtn">Raw JSON</button>
-    </div>
-    <pre id="detailOutput">Connect to load data.</pre>
-  </section>
-</main>
-
-<div id="modal" class="modal hidden">
-  <div class="modal-box">
-    <div class="modal-head"><h2>TickScope Settings</h2><button id="closeModal" class="icon">×</button></div>
-    <label>HTTPS Worker Endpoint</label>
-    <input id="endpoint" placeholder="https://tickscope-api.example.workers.dev">
-    <p class="hint">TickScope uses the included HTTPS Worker as the secure bridge to your HTTP server API. The TickScope token stays inside the Worker and is never stored in this GitHub Pages site.</p>
-    <div class="secure-badge">🔒 HTTPS WORKER MODE</div>
-    <div class="row">
-      <button id="testBtn" class="btn">Test Connection</button>
-      <button id="saveBtn" class="btn primary">Save & Connect</button>
-    </div>
-    <div id="testResult" class="test-result"></div>
-  </div>
-</div>
-<script src="assets/config.js"></script>
-<script src="assets/app.js"></script>
+  <script src="./assets/config.js"></script>
+  <script src="./assets/app.js"></script>
 </body>
 </html>

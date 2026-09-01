@@ -1,44 +1,42 @@
-# TickScope-Web — Final HTTPS Worker Build
+# TickScope Web
 
-Premium GitHub Pages dashboard for TickScope.
+GitHub Pages-ready Minecraft Java performance dashboard for ZyrexSMP.
 
-## Why this version fixes Mixed Content
+## Architecture
 
-GitHub Pages is HTTPS. The Minecraft/TickScope API is HTTP on port 19132.
-A browser cannot fetch that HTTP API directly from an HTTPS page.
+GitHub Pages
+→ `https://tickscope-api.brezzteam5.workers.dev`
+→ Cloudflare Worker secret `TICKSCOPE_TOKEN`
+→ `http://business3.astrixhost.web.id:19132/api/v1/all`
 
-This build therefore uses the included Cloudflare Worker:
+The TickScope API token is intentionally NOT stored in this repository.
 
-GitHub Pages (HTTPS)
-→ TickScope HTTPS Worker
-→ TickScope HTTP API
-→ ZyrexSMP
+## GitHub Pages
 
-The TickScope token is stored only as the Cloudflare Worker secret `TICKSCOPE_TOKEN`.
-It is NOT stored in this repository and is NOT sent from the browser.
+1. Create a repository named `TickScope-Web`.
+2. Upload the contents of this folder to the repository root.
+3. Push to `main`.
+4. Open **Settings → Pages** and select **GitHub Actions**.
+5. Wait for the workflow `Deploy TickScope to GitHub Pages` to finish.
 
-## One-time setup
+## Cloudflare Worker
 
-1. Deploy `worker/worker.js` as a Cloudflare Worker.
-2. Add Worker Secret:
-   `TICKSCOPE_TOKEN` = your current TickScope API token.
-3. Deploy the Worker.
-4. Copy its HTTPS URL, for example:
-   `https://tickscope-api.YOUR-SUBDOMAIN.workers.dev`
-5. Edit `assets/config.js` and replace `YOUR-SUBDOMAIN` with the real Worker URL.
-6. Commit/push the repo to GitHub.
-7. GitHub Pages → Settings → Pages → Source: GitHub Actions.
-8. Open the Pages site. Settings will already be filled with the HTTPS Worker URL.
+Deploy `worker/worker.js` with `worker/wrangler.toml`.
 
-## Important
+Create a Worker secret named exactly:
 
-Do NOT put the TickScope token in `assets/config.js`, `app.js`, HTML, or GitHub Actions source.
-If the token was ever exposed publicly, regenerate it in TickScope before production use.
+`TICKSCOPE_TOKEN`
 
-## API
+Set its value to your current TickScope token.
 
-The Worker proxies `/api/v1/*`, including:
-- `/api/v1/all`
-- future TickScope API endpoints
+Do not put the token in GitHub, HTML, JavaScript, or README files.
 
-The web dashboard uses `/api/v1/all` by default.
+## Tests
+
+Worker health:
+`https://tickscope-api.brezzteam5.workers.dev/health`
+
+Worker API:
+`https://tickscope-api.brezzteam5.workers.dev/api/v1/all`
+
+The dashboard uses the second endpoint automatically.
